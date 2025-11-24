@@ -1,0 +1,18 @@
+---
+- name: Copy simulator sources
+  synchronize:
+    src: ../../services/traffic_sensor_simulator/
+    dest: /opt/traffic_sensor_simulator/
+
+- name: Build simulator image
+  command: docker build -t smarttraffic/traffic_sensor_simulator:latest /opt/traffic_sensor_simulator
+
+- name: Run simulator
+  command: >
+    docker run -d --restart unless-stopped --name traffic_sensor_simulator
+    --network host
+    -e AUTH_URL=https://10.10.0.10/token
+    -e ALLOW_INSECURE_TLS=1
+    -e KAFKA_BROKER=10.10.0.20:9092
+    smarttraffic/traffic_sensor_simulator:latest
+

@@ -1,0 +1,12 @@
+{
+  "name": "traffic_density_processor",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "kafkajs": "2.2.4",
+    "amqplib": "0.10.3",
+    "node-fetch": "3.3.2"
+  }
+}
+

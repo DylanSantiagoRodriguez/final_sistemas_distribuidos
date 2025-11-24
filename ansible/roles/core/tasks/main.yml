@@ -1,0 +1,36 @@
+---
+- name: Copy processor sources
+  synchronize:
+    src: ../../services/traffic_density_processor/
+    dest: /opt/traffic_density_processor/
+
+- name: Build processor image
+  command: docker build -t smarttraffic/traffic_density_processor:latest /opt/traffic_density_processor
+
+- name: Run processor
+  command: >
+    docker run -d --restart unless-stopped --name traffic_density_processor
+    --network host
+    -e AUTH_URL=https://10.10.0.10/token
+    -e ALLOW_INSECURE_TLS=1
+    -e KAFKA_BROKER=10.10.0.20:9092
+    -e RABBITMQ_URL=amqp://10.10.0.20:5672
+    smarttraffic/traffic_density_processor:latest
+
+- name: Copy archiver sources
+  synchronize:
+    src: ../../services/traffic_archiver/
+    dest: /opt/traffic_archiver/
+
+- name: Build archiver image
+  command: docker build -t smarttraffic/traffic_archiver:latest /opt/traffic_archiver
+
+- name: Run archiver
+  command: >
+    docker run -d --restart unless-stopped --name traffic_archiver
+    --network host
+    -e AUTH_URL=https://10.10.0.10/token
+    -e ALLOW_INSECURE_TLS=1
+    -e KAFKA_BROKER=10.10.0.20:9092
+    smarttraffic/traffic_archiver:latest
+

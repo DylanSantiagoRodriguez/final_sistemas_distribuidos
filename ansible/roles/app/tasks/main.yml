@@ -1,0 +1,53 @@
+---
+- name: Copy dashboard backend sources
+  synchronize:
+    src: ../../services/user_dashboard_backend/
+    dest: /opt/user_dashboard_backend/
+
+- name: Build dashboard backend image
+  command: docker build -t smarttraffic/user_dashboard_backend:latest /opt/user_dashboard_backend
+
+- name: Run dashboard backend
+  command: >
+    docker run -d --restart unless-stopped --name user_dashboard_backend
+    -p 8080:8080 --network host
+    -e AUTH_URL=https://10.10.0.10/token
+    -e ALLOW_INSECURE_TLS=1
+    -e RABBITMQ_URL=amqp://10.10.0.20:5672
+    smarttraffic/user_dashboard_backend:latest
+
+- name: Copy alert dispatcher sources
+  synchronize:
+    src: ../../services/alert_dispatcher/
+    dest: /opt/alert_dispatcher/
+
+- name: Build alert dispatcher image
+  command: docker build -t smarttraffic/alert_dispatcher:latest /opt/alert_dispatcher
+
+- name: Run alert dispatcher
+  command: >
+    docker run -d --restart unless-stopped --name alert_dispatcher
+    --network host
+    -e AUTH_URL=https://10.10.0.10/token
+    -e ALLOW_INSECURE_TLS=1
+    -e RABBITMQ_URL=amqp://10.10.0.20:5672
+    smarttraffic/alert_dispatcher:latest
+
+- name: Copy query client sources
+  synchronize:
+    src: ../../services/query_client/
+    dest: /opt/query_client/
+
+- name: Build query client image
+  command: docker build -t smarttraffic/query_client:latest /opt/query_client
+
+- name: Run query client
+  command: >
+    docker run -d --restart unless-stopped --name query_client
+    --network host
+    -e AUTH_URL=https://10.10.0.10/token
+    -e ALLOW_INSECURE_TLS=1
+    -e RABBITMQ_URL=amqp://10.10.0.20:5672
+    -e ZONE=C
+    smarttraffic/query_client:latest
+

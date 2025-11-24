@@ -1,0 +1,14 @@
+{
+  "rabbit_version": "3.13",
+  "vhosts": [{ "name": "/" }],
+  "parameters": [],
+  "policies": [],
+  "exchanges": [
+    { "name": "traffic_updates", "vhost": "/", "type": "fanout", "durable": true, "auto_delete": false, "internal": false, "arguments": {} },
+    { "name": "query_answers", "vhost": "/", "type": "topic", "durable": true, "auto_delete": false, "internal": false, "arguments": {} }
+  ],
+  "queues": [
+    { "name": "query_traffic_queue", "vhost": "/", "durable": true, "auto_delete": false, "arguments": {} }
+  ],
+  "bindings": []
+}

@@ -1,0 +1,10 @@
+{
+  "sensor": { "secret": "sensor-secret", "scopes": ["rabbitmq.read:*/*", "rabbitmq.write:*/*"] },
+  "processor": { "secret": "processor-secret", "scopes": ["rabbitmq.read:*/*", "rabbitmq.write:*/*"] },
+  "archiver": { "secret": "archiver-secret", "scopes": ["rabbitmq.read:*/*"] },
+  "dashboard": { "secret": "dashboard-secret", "scopes": ["rabbitmq.read:*/*"] },
+  "dispatcher": { "secret": "dispatcher-secret", "scopes": ["rabbitmq.read:*/*", "rabbitmq.write:*/*"] },
+  "query": { "secret": "query-secret", "scopes": ["rabbitmq.read:*/*", "rabbitmq.write:*/*"] },
+  "kafka-broker": { "secret": "kafka-broker-secret" }
+}
+
