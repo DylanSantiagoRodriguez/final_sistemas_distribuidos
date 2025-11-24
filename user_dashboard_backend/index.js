@@ -3,7 +3,7 @@ import https from "https"
 import amqp from "amqplib"
 import { WebSocketServer } from "ws"
 
-const AUTH_URL = process.env.AUTH_URL || "https://10.10.0.10/token"
+const AUTH_URL = process.env.AUTH_URL || "http://172.31.33.47:8080/token"
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://10.10.0.20:5672"
 const WS_PORT = process.env.WS_PORT || 8080
 
