@@ -25,5 +25,5 @@ services:
     environment:
       AUTH_URL: "https://172.31.35.24/token"
       KAFKA_BROKER: "172.31.6.99:9092"
-      RABBITMQ_URL: "amqp://172.31.6.99:5672"
+      RABBITMQ_URL: "amqp://guest:guest@172.31.6.99:5672/"
       ALLOW_INSECURE_TLS: "true"
