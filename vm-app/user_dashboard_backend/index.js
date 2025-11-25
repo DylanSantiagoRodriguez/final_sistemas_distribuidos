@@ -58,24 +58,15 @@ async function main() {
         new Promise((_, rej) => setTimeout(() => rej(new Error("amqp connect timeout")), 5000))
       ])
       ch = await conn.createChannel()
-      await ch.assertQueue("query_traffic_queue", { durable: true })
-      await ch.assertExchange("query_answers", "topic", { durable: true })
-      qAns = await ch.assertQueue("", { exclusive: true })
-      await ch.bindQueue(qAns.queue, "query_answers", "#")
-      ch.consume(qAns.queue, (msg) => {
+      await ch.assertExchange("traffic_updates", "fanout", { durable: true })
+      const qUp = await ch.assertQueue("", { exclusive: true })
+      await ch.bindQueue(qUp.queue, "traffic_updates", "")
+      ch.consume(qUp.queue, (msg) => {
         if (!msg) return
         last = msg.content.toString()
         wss.broadcast(last)
         ch.ack(msg)
       })
-      if (!sending) {
-        sending = true
-        setInterval(() => {
-          if (!ch) return
-          const payload = { zone: ZONE, ts: Date.now() }
-          ch.sendToQueue("query_traffic_queue", Buffer.from(JSON.stringify(payload)), { persistent: true })
-        }, 10000)
-      }
       log("[dashboard] RabbitMQ connected ✔️")
     } catch (err) {
       error("[dashboard] RabbitMQ connect failed", err && err.message ? err.message : err)
@@ -95,30 +86,7 @@ async function main() {
     }
   })
 
-  app.get("/query", async (req, res) => {
-    if (!ch) return res.status(503).json({ error: "unavailable" })
-    const zone = req.query.zone || ZONE
-    const cid = Math.random().toString(16).slice(2, 10)
-    const rk = `query.ws.${cid}`
-    const tmp = await ch.assertQueue("", { exclusive: true })
-    await ch.bindQueue(tmp.queue, "query_answers", rk)
-    const timer = setTimeout(async () => {
-      await ch.deleteQueue(tmp.queue)
-      res.status(504).json({ error: "timeout" })
-    }, 5000)
-    ch.consume(tmp.queue, async (msg) => {
-      if (!msg) return
-      clearTimeout(timer)
-      const data = msg.content.toString()
-      wss.broadcast(data)
-      ch.ack(msg)
-      await ch.deleteQueue(tmp.queue)
-      res.setHeader("content-type", "application/json")
-      res.end(data)
-    }, { noAck: false })
-    const payload = { zone, replyTo: rk }
-    ch.sendToQueue("query_traffic_queue", Buffer.from(JSON.stringify(payload)), { persistent: true })
-  })
+  // removed /query route; real-time comes from traffic_updates
 }
 
 main()
