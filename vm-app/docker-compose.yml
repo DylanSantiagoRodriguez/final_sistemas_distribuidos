@@ -29,6 +29,7 @@ services:
       RABBITMQ_PASS: "dylan"
       WS_PORT: "8080"
       ALLOW_INSECURE_TLS: "true"
+      QUIET: "true"
 
   query_client:
     build: ./query_client
