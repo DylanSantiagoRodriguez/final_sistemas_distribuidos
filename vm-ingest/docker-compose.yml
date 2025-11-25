@@ -16,9 +16,9 @@ services:
       KAFKA_BROKER: "172.31.6.99:9092"
       ALLOW_INSECURE_TLS: "true"
 
-    networks:
-      - backend
+    # networks:
+    #   - backend
 
-networks:
-  backend:
-    driver: bridge
+# networks:
+#   backend:
+#     driver: bridge
