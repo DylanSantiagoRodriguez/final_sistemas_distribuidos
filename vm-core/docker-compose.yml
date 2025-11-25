@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  archiver:
+    build: ./traffic_archiver
+    container_name: traffic_archiver
+    network_mode: "host"
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      AUTH_URL: "https://172.31.35.24/token"
+      KAFKA_BROKER: "172.31.6.99:9092"
+      ALLOW_INSECURE_TLS: "true"
+
+  density_processor:
+    build: ./traffic_density_processor
+    container_name: traffic_density_processor
+    network_mode: "host"
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      AUTH_URL: "https://172.31.35.24/token"
+      KAFKA_BROKER: "172.31.6.99:9092"
+      RABBITMQ_URL: "amqp://172.31.6.99:5672"
+      ALLOW_INSECURE_TLS: "true"

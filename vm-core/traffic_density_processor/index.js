@@ -1,6 +1,6 @@
 import fetch from "node-fetch"
 import https from "https"
-import { Kafka } from "kafkajs"
+import { Kafka, logLevel } from "kafkajs"
 import amqp from "amqplib"
 
 const AUTH_URL = process.env.AUTH_URL || "https://10.10.0.10/token"
@@ -19,28 +19,34 @@ async function getToken() {
 }
 
 async function run() {
+  console.log("[density] starting")
   const token = await getToken()
-  const kafka = new Kafka({
-    brokers: [KAFKA_BROKER],
-    sasl: { mechanism: "oauthbearer", oauthBearerProvider: async () => ({ value: token }) }
-  })
+  console.log(`[density] kafka broker ${KAFKA_BROKER}`)
+  const kafka = new Kafka({ brokers: [KAFKA_BROKER], logLevel: logLevel.INFO })
   const consumer = kafka.consumer({ groupId: "density-processor" })
+  console.log("[density] connecting consumer")
   await consumer.connect()
+  console.log("[density] subscribed to topic traffic_raw")
   await consumer.subscribe({ topic: "traffic_raw", fromBeginning: false })
 
+  console.log(`[density] connecting RabbitMQ ${RABBITMQ_URL}`)
   const conn = await amqp.connect(RABBITMQ_URL, { username: "oauth2", password: token })
   const ch = await conn.createChannel()
   await ch.assertExchange("traffic_updates", "fanout", { durable: true })
 
   await consumer.run({
-    eachMessage: async ({ message }) => {
+    eachMessage: async ({ message, topic, partition }) => {
       const m = JSON.parse(message.value.toString())
       const status = m.vehicles > 70 ? "CONGESTIONADA" : "FLUIDA"
       const payload = { zone: m.zone_id || "C", status, ts: Date.now() }
+      console.log(`[density] publish update ${topic}[${partition}] vehicles=${m.vehicles}`)
       ch.publish("traffic_updates", "", Buffer.from(JSON.stringify(payload)))
     }
   })
 }
 
-run()
+run().catch(err => {
+  console.error("[density] fatal", err)
+  process.exit(1)
+})
 
