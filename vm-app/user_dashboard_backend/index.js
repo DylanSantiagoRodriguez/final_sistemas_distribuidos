@@ -1,52 +1,26 @@
-import amqp from "amqplib"
-import express from "express"
-import http from "http"
-import { createWebSocketServer } from "./wsServer.js"
+const express = require("express");
+const http = require("http");
+const { createWebSocketServer } = require("./wsServer");
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://172.31.6.99:5672"
-const WS_PORT = process.env.WS_PORT || 8080
+const app = express();
+app.use(express.json());
 
-async function run() {
-  console.log("[dashboard] starting")
-  console.log(`[dashboard] ws port ${WS_PORT}`)
-  console.log(`[dashboard] rabbitmq ${RABBITMQ_URL}`)
-  const user = process.env.RABBITMQ_USER || "user"
-  const pass = process.env.RABBITMQ_PASS || "user"
-  console.log(`[dashboard] connecting with user/pass (${user})`)
+// Crear servidor HTTP
+const server = http.createServer(app);
 
-  const app = express()
-  app.use(express.json())
-  const server = http.createServer(app)
-  const wss = createWebSocketServer(server)
-  app.post("/push", (req, res) => {
-    wss.broadcast(req.body || {})
-    res.json({ ok: true })
-  })
+// Crear WebSocket server sobre el mismo HTTP
+const wss = createWebSocketServer(server);
 
-  const conn = await amqp.connect(RABBITMQ_URL, { username: user, password: pass })
-  conn.on("error", (e) => console.error("[dashboard] amqp conn error", e))
-  conn.on("close", () => console.error("[dashboard] amqp conn closed"))
+// Endpoint para recibir eventos desde query_client
+app.post("/push", (req, res) => {
+    const event = req.body;
+    console.log("[dashboard] recibido evento:", event);
 
-  const ch = await conn.createChannel()
-  ch.on("error", (e) => console.error("[dashboard] amqp channel error", e))
+    wss.broadcast(event);
 
-  await ch.assertExchange("query_answers", "topic", { durable: true })
-  const qAns = await ch.assertQueue("", { exclusive: true })
-  await ch.bindQueue(qAns.queue, "query_answers", "#")
-  console.log(`[dashboard] consuming query answers from ${qAns.queue}`)
-  ch.consume(qAns.queue, (msg) => {
-    if (!msg) return
-    const data = msg.content.toString()
-    wss.broadcast(data)
-    ch.ack(msg)
-  })
+    res.json({ ok: true });
+});
 
-  server.listen(Number(WS_PORT), () => {
-    console.log(`[WS] WebSocket server listening on ${WS_PORT}`)
-  })
-}
-
-run().catch((err) => {
-  console.error("[dashboard] fatal", err)
-  process.exit(1)
-})
+server.listen(8080, () => {
+    console.log("[dashboard] WebSocket escuchando en puerto 8080");
+});
