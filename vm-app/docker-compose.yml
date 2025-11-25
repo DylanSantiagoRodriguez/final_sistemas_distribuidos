@@ -24,7 +24,7 @@ services:
       - 1.1.1.1
     environment:
       AUTH_URL: "https://172.31.35.24/token"
-      RABBITMQ_URL: "amqp://user:user@172.31.6.99:5672"
+      RABBITMQ_URL: "amqp://172.31.6.99:5672"
       RABBITMQ_USER: "user"
       RABBITMQ_PASS: "user"
       WS_PORT: "8080"
