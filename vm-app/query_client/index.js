@@ -20,7 +20,8 @@ async function run() {
   const user = process.env.RABBITMQ_USER || "oauth2"
   const pass = process.env.RABBITMQ_PASS || await getToken()
   console.log(`[query] connecting as ${user}`)
-  const conn = await amqp.connect(RABBITMQ_URL, { username: user, password: pass })
+  const urlBase = RABBITMQ_URL.replace(/amqp:\/\/[^@]+@/, "amqp://")
+  const conn = await amqp.connect(urlBase, { username: user, password: pass })
   const ch = await conn.createChannel()
   await ch.assertQueue("query_traffic_queue", { durable: true })
   await ch.assertExchange("query_answers", "topic", { durable: true })
