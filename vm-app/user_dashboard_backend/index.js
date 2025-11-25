@@ -50,7 +50,9 @@ async function main() {
       const tokRes = await axios.post(AUTH_URL, { client_id: "dashboard", client_secret: "dashboard-secret" }, opts)
       const token = tokRes.data && tokRes.data.access_token ? tokRes.data.access_token : ""
       const urlBase = RABBITMQ_URL.replace(/amqp:\/\/[^@]+@/, "amqp://")
-      const connPromise = amqp.connect(urlBase, { username: "oauth2", password: token })
+      const connPromise = amqp
+        .connect(urlBase, { username: "oauth2", password: token })
+        .catch(() => amqp.connect(urlBase, { username: RABBITMQ_USER, password: RABBITMQ_PASS }))
       const conn = await Promise.race([
         connPromise,
         new Promise((_, rej) => setTimeout(() => rej(new Error("amqp connect timeout")), 5000))
