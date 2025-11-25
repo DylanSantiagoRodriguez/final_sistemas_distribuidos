@@ -11,7 +11,7 @@ services:
       - 1.1.1.1
     environment:
       AUTH_URL: "https://172.31.35.24/token"
-      RABBITMQ_URL: "amqp://dylan:dylan@172.31.6.99:5672"
+      RABBITMQ_URL: "amqp://user:user@172.31.6.99:5672"
       ALLOW_INSECURE_TLS: "true"
 
   user_dashboard_backend:
@@ -25,8 +25,8 @@ services:
     environment:
       AUTH_URL: "https://172.31.35.24/token"
       RABBITMQ_URL: "amqp://172.31.6.99:5672"
-      RABBITMQ_USER: "dylan"
-      RABBITMQ_PASS: "dylan"
+      RABBITMQ_USER: "user"
+      RABBITMQ_PASS: "user"
       WS_PORT: "8080"
       ALLOW_INSECURE_TLS: "true"
       QUIET: "true"
@@ -41,6 +41,6 @@ services:
       - 1.1.1.1
     environment:
       AUTH_URL: "https://172.31.35.24/token"
-      RABBITMQ_URL: "amqp://dylan:dylan@172.31.6.99:5672"
+      RABBITMQ_URL: "amqp://user:user@172.31.6.99:5672"
       ZONE: "C"
       ALLOW_INSECURE_TLS: "true"
