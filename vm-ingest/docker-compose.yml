@@ -4,6 +4,7 @@ services:
   sensor:
     build: ./traffic_sensor_simulator
     container_name: sensor_sim
+    network_mode: "host"
     restart: unless-stopped
     dns:
       - 8.8.8.8
