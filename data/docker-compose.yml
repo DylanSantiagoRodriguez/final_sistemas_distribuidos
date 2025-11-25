@@ -23,7 +23,7 @@ services:
       KAFKA_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://kafka:9093"
       # Anuncia las direcciones donde el broker Kafka puede ser contactado por los clientes:
       # INTERNAL (acceso interno Docker), EXTERNAL (acceso desde la red, aquí la IP privada de la VM)
-      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://172.18.0.1:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://172.17.0.1:9092"
       # Mapea cada listener al protocolo PLAINTEXT (sin autenticación/SSL)
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
       # Especifica que los brokers se comunicarán entre sí usando el listener INTERNAL
