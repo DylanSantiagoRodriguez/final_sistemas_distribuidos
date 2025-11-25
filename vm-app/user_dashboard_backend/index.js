@@ -14,14 +14,19 @@ async function getToken() {
 }
 
 async function run() {
+  console.log("[dashboard] starting")
+  console.log(`[dashboard] ws port ${WS_PORT}`)
+  console.log(`[dashboard] rabbitmq ${RABBITMQ_URL}`)
   const user = process.env.RABBITMQ_USER || "oauth2"
   const pass = process.env.RABBITMQ_PASS || await getToken()
+  console.log(`[dashboard] connecting as ${user}`)
   const wss = new WebSocketServer({ port: WS_PORT })
   const conn = await amqp.connect(RABBITMQ_URL, { username: user, password: pass })
   const ch = await conn.createChannel()
   await ch.assertExchange("traffic_updates", "fanout", { durable: true })
   const q = await ch.assertQueue("", { exclusive: true })
   await ch.bindQueue(q.queue, "traffic_updates", "")
+  console.log(`[dashboard] consuming updates from ${q.queue}`)
   ch.consume(q.queue, msg => {
     const data = msg ? msg.content.toString() : ""
     wss.clients.forEach(c => { if (c.readyState === 1) c.send(data) })
@@ -29,4 +34,7 @@ async function run() {
   })
 }
 
-run()
+run().catch(err => {
+  console.error("[dashboard] fatal", err)
+  process.exit(1)
+})

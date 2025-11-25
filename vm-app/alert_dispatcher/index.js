@@ -22,8 +22,11 @@ async function getToken() {
 }
 
 async function run() {
+  console.log("[dispatcher] starting")
+  console.log(`[dispatcher] rabbitmq ${RABBITMQ_URL}`)
   const user = process.env.RABBITMQ_USER || "oauth2"
   const pass = process.env.RABBITMQ_PASS || await getToken()
+  console.log(`[dispatcher] connecting as ${user}`)
   const conn = await amqp.connect(RABBITMQ_URL, { username: user, password: pass })
   const ch = await conn.createChannel()
   await ch.assertExchange("traffic_updates", "fanout", { durable: true })
@@ -31,10 +34,12 @@ async function run() {
   await ch.assertQueue("query_traffic_queue", { durable: true })
   const qUpdates = await ch.assertQueue("", { exclusive: true })
   await ch.bindQueue(qUpdates.queue, "traffic_updates", "")
+  console.log(`[dispatcher] consuming updates from ${qUpdates.queue}`)
   const state = new Map()
   ch.consume(qUpdates.queue, msg => {
     if (!msg) return
     const m = JSON.parse(msg.content.toString())
+    console.log(`[dispatcher] update zone=${m.zone} status=${m.status}`)
     state.set(m.zone, m.status)
     ch.ack(msg)
   })
@@ -44,9 +49,13 @@ async function run() {
     const zone = q.zone
     const answer = { zone, status: state.get(zone) || "DESCONOCIDA", ts: Date.now() }
     const rk = q.replyTo || "query.default"
+    console.log(`[dispatcher] answer zone=${zone} rk=${rk} status=${answer.status}`)
     ch.publish("query_answers", rk, Buffer.from(JSON.stringify(answer)))
     ch.ack(msg)
   })
 }
 
-run()
+run().catch(err => {
+  console.error("[dispatcher] fatal", err)
+  process.exit(1)
+})

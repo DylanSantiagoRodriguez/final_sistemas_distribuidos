@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  alert_dispatcher:
+    build: ./alert_dispatcher
+    container_name: alert_dispatcher
+    network_mode: "host"
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      AUTH_URL: "https://172.31.35.24/token"
+      RABBITMQ_URL: "amqp://172.31.6.99:5672"
+      RABBITMQ_USER: ""
+      RABBITMQ_PASS: ""
+      ALLOW_INSECURE_TLS: "true"
+
+  user_dashboard_backend:
+    build: ./user_dashboard_backend
+    container_name: user_dashboard_backend
+    network_mode: "host"
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      AUTH_URL: "https://172.31.35.24/token"
+      RABBITMQ_URL: "amqp://172.31.6.99:5672"
+      RABBITMQ_USER: ""
+      RABBITMQ_PASS: ""
+      WS_PORT: "8080"
+      ALLOW_INSECURE_TLS: "true"
+
+  query_client:
+    build: ./query_client
+    container_name: query_client
+    network_mode: "host"
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      AUTH_URL: "https://172.31.35.24/token"
+      RABBITMQ_URL: "amqp://172.31.6.99:5672"
+      ZONE: "C"
+      ALLOW_INSECURE_TLS: "true"
