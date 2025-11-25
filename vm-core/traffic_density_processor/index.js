@@ -3,9 +3,9 @@ import https from "https"
 import { Kafka, logLevel } from "kafkajs"
 import amqp from "amqplib"
 
-const AUTH_URL = process.env.AUTH_URL || "https://10.10.0.10/token"
-const KAFKA_BROKER = process.env.KAFKA_BROKER || "10.10.0.20:9092"
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://10.10.0.20:5672"
+const AUTH_URL = process.env.AUTH_URL || "https://172.31.33.47:8080/token"
+const KAFKA_BROKER = process.env.KAFKA_BROKER || "172.31.38.13:9092"
+const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://dylan:dylan@172.31.38.13:5672"
 
 async function getToken() {
   const res = await fetch(AUTH_URL, {

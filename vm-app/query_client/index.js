@@ -3,8 +3,8 @@ import https from "https"
 import amqp from "amqplib"
 import { v4 as uuid } from "uuid"
 
-const AUTH_URL = process.env.AUTH_URL || "https://10.10.0.10/token"
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://10.10.0.20:5672"
+const AUTH_URL = process.env.AUTH_URL || "https://172.31.35.24/token"
+const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://dylan:dylan@172.31.6.99:5672"
 const ZONE = process.env.ZONE || "C"
 
 async function getToken() {
