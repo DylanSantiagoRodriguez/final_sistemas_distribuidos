@@ -1,9 +1,5 @@
 FROM node:18-alpine
-
 WORKDIR /app
-
-# Configurar DNS explícitamente
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
 COPY package.json /app/
 RUN npm install --production
