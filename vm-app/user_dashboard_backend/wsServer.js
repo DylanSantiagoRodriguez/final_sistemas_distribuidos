@@ -1,9 +1,9 @@
-const WebSocket = require("ws");
+import WebSocket from "ws";
 
-function createWebSocketServer(server) {
+export function createWebSocketServer(server) {
     const wss = new WebSocket.Server({ server });
 
-    wss.broadcast = function (data) {
+    wss.broadcast = (data) => {
         for (const client of wss.clients) {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(data));
@@ -13,5 +13,3 @@ function createWebSocketServer(server) {
 
     return wss;
 }
-
-module.exports = { createWebSocketServer };

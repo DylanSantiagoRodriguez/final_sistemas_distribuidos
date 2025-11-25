@@ -2,7 +2,7 @@
   "name": "user_dashboard_backend",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
     "amqplib": "0.10.3",
     "ws": "8.18.0",
