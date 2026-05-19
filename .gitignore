@@ -1,0 +1,7 @@
+node_modules/
+*.pem
+.env
+keys/
+kafka-data/
+pgdata/
+.DS_Store

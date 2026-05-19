@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Control — Tráfico Urbano</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0d1117; color: #c9d1d9; min-height: 100vh; padding: 20px; }
+    h1 { color: #58a6ff; margin-bottom: 20px; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 16px; max-width: 480px; }
+    input { width: 100%; padding: 8px 12px; margin: 6px 0 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; }
+    button { background: #238636; border: none; color: #fff; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    button:hover { background: #2ea043; }
+    label { font-size: 13px; color: #8b949e; }
+    #events { max-height: 400px; overflow-y: auto; }
+    .event { padding: 8px 12px; border-left: 3px solid #58a6ff; margin-bottom: 6px; background: #0d1117; font-size: 13px; }
+    .event.congestion { border-color: #f85149; }
+    .event.fluida { border-color: #3fb950; }
+    .status-bar { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; }
+    .zone-badge { display: inline-block; background: #21262d; border: 1px solid #30363d; border-radius: 12px; padding: 2px 10px; margin: 2px; font-size: 12px; }
+    #error { color: #f85149; font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Panel de Control — Tráfico Urbano</h1>
+
+  <div id="login-section" class="card">
+    <label>Usuario</label>
+    <input type="text" id="username" placeholder="admin">
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button onclick="login()">Ingresar</button>
+    <div id="error"></div>
+  </div>
+
+  <div id="otp-section" class="card" style="display:none">
+    <label>Código OTP (Google Authenticator)</label>
+    <input type="text" id="otp" placeholder="123456" maxlength="6">
+    <button onclick="verify2FA()">Verificar</button>
+    <div id="error-otp"></div>
+  </div>
+
+  <div id="dashboard" style="display:none">
+    <div class="status-bar" id="status-bar">Conectando...</div>
+    <div class="card">
+      <strong>Zonas asignadas:</strong><br><br>
+      <div id="zonas-badges"></div>
+    </div>
+    <div class="card">
+      <strong>Eventos en tiempo real</strong>
+      <div id="events" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin
+    let accessToken = null
+    let tempToken = null
+    let ws = null
+    let refreshTimer = null
+
+    function parseJWT(token) {
+      try { return JSON.parse(atob(token.split(".")[1])) } catch { return null }
+    }
+
+    function setError(id, msg) {
+      document.getElementById(id).textContent = msg
+    }
+
+    async function login() {
+      setError("error", "")
+      const username = document.getElementById("username").value
+      const password = document.getElementById("password").value
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username, password }),
+        credentials: "include",
+      })
+      const data = await res.json()
+      if (!res.ok) return setError("error", data.error || "Error de autenticación")
+
+      if (data.requiere_2fa) {
+        tempToken = data.temp_token
+        document.getElementById("login-section").style.display = "none"
+        document.getElementById("otp-section").style.display = "block"
+        return
+      }
+
+      accessToken = data.access_token
+      showDashboard()
+    }
+
+    async function verify2FA() {
+      setError("error-otp", "")
+      const codigo_otp = document.getElementById("otp").value
+      const res = await fetch(`${API}/auth/2fa/verify`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ temp_token: tempToken, codigo_otp }),
+        credentials: "include",
+      })
+      const data = await res.json()
+      if (!res.ok) return setError("error-otp", data.error || "Código inválido")
+      accessToken = data.access_token
+      document.getElementById("otp-section").style.display = "none"
+      showDashboard()
+    }
+
+    function showDashboard() {
+      const payload = parseJWT(accessToken)
+      document.getElementById("dashboard").style.display = "block"
+      const badges = document.getElementById("zonas-badges")
+      badges.innerHTML = (payload.zonas_asignadas || [])
+        .map(z => `<span class="zone-badge">${z}</span>`).join("")
+      scheduleRefresh(payload.exp)
+      connectWS()
+    }
+
+    function scheduleRefresh(expEpoch) {
+      if (refreshTimer) clearTimeout(refreshTimer)
+      const msUntilExpiry = (expEpoch * 1000) - Date.now() - 30000
+      refreshTimer = setTimeout(silentRefresh, Math.max(msUntilExpiry, 0))
+    }
+
+    async function silentRefresh() {
+      const res = await fetch(`${API}/auth/refresh`, { method: "POST", credentials: "include" })
+      if (!res.ok) { document.getElementById("status-bar").textContent = "Sesión expirada — recarga la página"; return }
+      const data = await res.json()
+      accessToken = data.access_token
+      const payload = parseJWT(accessToken)
+      scheduleRefresh(payload.exp)
+      // Reconnect WS with new token
+      if (ws) { ws.close(); connectWS() }
+    }
+
+    function connectWS() {
+      const wsProto = location.protocol === "https:" ? "wss" : "ws"
+      ws = new WebSocket(`${wsProto}://${location.host}/ws?token=${encodeURIComponent(accessToken)}`)
+
+      ws.onopen = () => {
+        document.getElementById("status-bar").textContent = "Conectado"
+        const payload = parseJWT(accessToken)
+        ws.send(JSON.stringify({ action: "subscribe", zonas: payload.zonas_asignadas || [] }))
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data)
+          if (msg.tipo === "subscripcion_ok") {
+            document.getElementById("status-bar").textContent =
+              `Suscrito a: ${msg.zonas.join(", ")}`
+            return
+          }
+          addEvent(msg)
+        } catch {}
+      }
+
+      ws.onclose = async (e) => {
+        document.getElementById("status-bar").textContent = "Reconectando..."
+        if (e.code === 4001) {
+          await silentRefresh()
+        } else {
+          setTimeout(connectWS, 3000)
+        }
+      }
+
+      ws.onerror = () => {}
+    }
+
+    function addEvent(evento) {
+      const container = document.getElementById("events")
+      const div = document.createElement("div")
+      const status = evento.tipo_sensor === "contador" && evento.valor > 70 ? "congestion" : "fluida"
+      div.className = `event ${status}`
+      div.textContent = `[${new Date(evento.timestamp).toLocaleTimeString()}] zona=${evento.zona} tipo=${evento.tipo_sensor} valor=${JSON.stringify(evento.valor)}`
+      container.prepend(div)
+      // Keep max 100 events in DOM
+      while (container.children.length > 100) container.lastChild.remove()
+    }
+  </script>
+</body>
+</html>

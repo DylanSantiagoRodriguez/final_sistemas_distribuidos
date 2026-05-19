@@ -1,0 +1,10 @@
+{
+  "name": "traffic-processor",
+  "version": "1.0.0",
+  "main": "processor.js",
+  "type": "module",
+  "dependencies": {
+    "kafkajs": "2.2.4",
+    "pg": "8.13.0"
+  }
+}

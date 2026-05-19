@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    restart: unless-stopped
+    network_mode: "host"
+    environment:
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+      CLUSTER_ID: "Jc83HgZES8Opf-6cxduOJg"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENERS: "INTERNAL://localhost:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://localhost:9093"
+      # Replace 10.0.2.10 with the actual private IP of kafka-broker VM
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://localhost:29092,EXTERNAL://10.0.2.10:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - ./kafka-data:/var/lib/kafka/data

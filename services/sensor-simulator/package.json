@@ -1,0 +1,9 @@
+{
+  "name": "sensor-simulator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "kafkajs": "2.2.4"
+  }
+}

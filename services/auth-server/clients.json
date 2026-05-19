@@ -1,0 +1,5 @@
+{
+  "sensor":    { "secret": "sensor-secret" },
+  "processor": { "secret": "processor-secret" },
+  "archiver":  { "secret": "archiver-secret" }
+}

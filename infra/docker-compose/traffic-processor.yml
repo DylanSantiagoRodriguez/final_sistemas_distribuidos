@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    restart: unless-stopped
+    network_mode: "host"
+    environment:
+      POSTGRES_DB: trafico_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ../../services/traffic-processor/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  processor:
+    build: ../../services/traffic-processor
+    container_name: traffic_processor
+    restart: unless-stopped
+    network_mode: "host"
+    depends_on:
+      - postgres
+    environment:
+      # Replace with actual private IPs
+      KAFKA_BROKER: "10.0.2.10:9092"
+      PGHOST: "localhost"
+      PGDATABASE: "trafico_db"
+      PGUSER: "postgres"
+      PGPASSWORD: "changeme"

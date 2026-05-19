@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  api-backend:
+    build: ../../services/api-backend
+    container_name: api_backend
+    restart: unless-stopped
+    network_mode: "host"
+    environment:
+      PORT: "3000"
+      # Replace with actual private IPs
+      KAFKA_BROKER: "10.0.2.10:9092"
+      PGHOST: "10.0.2.20"
+      PGDATABASE: "trafico_db"
+      PGUSER: "postgres"
+      PGPASSWORD: "changeme"
+      # Set SQLI_DEMO=true only on branch "insegura"
+      SQLI_DEMO: "false"
+    volumes:
+      # Mount RSA keys — generate with scripts/generate-keys.sh
+      - ./keys:/app/keys:ro

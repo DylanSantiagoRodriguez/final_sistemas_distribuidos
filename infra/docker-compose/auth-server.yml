@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  auth-server:
+    build: ../../services/auth-server
+    container_name: auth_server
+    restart: unless-stopped
+    network_mode: "host"
+    environment:
+      JWT_SECRET: "changeme-use-strong-secret"
+      HTTP_PORT: "8080"
+    volumes:
+      - ./cert.pem:/cert.pem:ro
+      - ./key.pem:/key.pem:ro
