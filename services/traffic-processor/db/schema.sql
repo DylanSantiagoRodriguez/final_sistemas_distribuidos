@@ -44,6 +44,6 @@ CREATE INDEX IF NOT EXISTS idx_anomalias_activo  ON anomalias(activo);
 INSERT INTO operadores (username, password_hash, zonas_asignadas)
 VALUES (
   'admin',
-  '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
+  '$2a$10$vC2hUvKoZWvukn14oYk2FOS54Kz3Owak.SPhICh4UgOYesirTeppe',
   ARRAY['norte','sur','centro','periferico']
 ) ON CONFLICT (username) DO NOTHING;
