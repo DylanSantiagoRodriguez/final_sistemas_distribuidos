@@ -7,9 +7,9 @@ services:
     restart: unless-stopped
     network_mode: "host"
     environment:
-      POSTGRES_DB: trafico_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: ${PGDATABASE:-trafico_db}
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-changeme}
     volumes:
       - ./pgdata:/var/lib/postgresql/data
       - ../../services/traffic-processor/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -22,9 +22,8 @@ services:
     depends_on:
       - postgres
     environment:
-      # Replace with actual private IPs
-      KAFKA_BROKER: "10.0.2.10:9092"
-      PGHOST: "localhost"
-      PGDATABASE: "trafico_db"
-      PGUSER: "postgres"
-      PGPASSWORD: "changeme"
+      KAFKA_BROKER: ${KAFKA_BROKER:-127.0.0.1:9092}
+      PGHOST: ${PGHOST:-localhost}
+      PGDATABASE: ${PGDATABASE:-trafico_db}
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-changeme}
