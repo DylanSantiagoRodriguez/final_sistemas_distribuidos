@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>WS Tester — Tráfico Urbano</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }
+    h2 { color: #58a6ff; margin-bottom: 16px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    input, textarea { background: #161b22; border: 1px solid #30363d; color: #c9d1d9;
+      padding: 6px 10px; border-radius: 6px; font-family: monospace; font-size: 13px; }
+    input { flex: 1; }
+    textarea { width: 100%; height: 80px; resize: vertical; }
+    button { background: #238636; border: none; color: #fff; padding: 6px 16px;
+      border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+    button:hover { background: #2ea043; }
+    button.danger { background: #b62324; }
+    button.danger:hover { background: #da3633; }
+    button.secondary { background: #21262d; border: 1px solid #30363d; }
+    button.secondary:hover { background: #30363d; }
+    #status { padding: 6px 12px; border-radius: 6px; font-size: 13px;
+      background: #21262d; border: 1px solid #30363d; display: inline-block; margin-bottom: 12px; }
+    #status.connected { border-color: #3fb950; color: #3fb950; }
+    #status.error { border-color: #f85149; color: #f85149; }
+    #log { background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      padding: 12px; height: 400px; overflow-y: auto; font-size: 12px; }
+    .msg { padding: 4px 0; border-bottom: 1px solid #21262d; }
+    .msg.sent { color: #58a6ff; }
+    .msg.recv { color: #3fb950; }
+    .msg.sys  { color: #8b949e; }
+    .msg.err  { color: #f85149; }
+    .ts { color: #484f58; margin-right: 8px; }
+    label { font-size: 12px; color: #8b949e; }
+    section { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <h2>WebSocket Tester — Tráfico Urbano</h2>
+
+  <section>
+    <label>1. Obtener token (login)</label>
+    <div class="row" style="margin-top:6px">
+      <input id="api-url" value="https://ec2-18-225-226-38.us-east-2.compute.amazonaws.com" placeholder="base URL">
+    </div>
+    <div class="row">
+      <input id="username" value="admin" placeholder="usuario" style="flex:0 0 120px">
+      <input id="password" type="password" value="admin123" placeholder="contraseña" style="flex:0 0 160px">
+      <button onclick="login()">Login</button>
+    </div>
+    <div class="row">
+      <input id="otp" placeholder="OTP del email (si 2FA activo)" style="flex:0 0 220px" maxlength="6" autocomplete="one-time-code">
+      <input id="temp-token" placeholder="temp_token (auto)" style="flex:1">
+      <button onclick="verify2FA()">Verificar 2FA</button>
+    </div>
+    <div class="row">
+      <label>Access token:</label>
+    </div>
+    <div class="row">
+      <input id="access-token" placeholder="(se llena automáticamente tras login/2FA)">
+      <button class="secondary" onclick="copyToken()">Copiar</button>
+    </div>
+  </section>
+
+  <section>
+    <label>2. Conectar WebSocket</label>
+    <div class="row" style="margin-top:6px">
+      <input id="ws-url" value="wss://ec2-18-225-226-38.us-east-2.compute.amazonaws.com/ws" placeholder="ws URL">
+      <button onclick="connect()">Conectar</button>
+      <button class="danger" onclick="disconnect()">Desconectar</button>
+    </div>
+    <div id="status">● Desconectado</div>
+  </section>
+
+  <section>
+    <label>3. Enviar mensajes</label>
+    <div style="margin-top:6px; margin-bottom:6px; display:flex; gap:8px; flex-wrap:wrap">
+      <button class="secondary" onclick="sendSubscribeAll()">Suscribir todas las zonas</button>
+      <button class="secondary" onclick="sendSubscribeNorte()">Solo norte</button>
+      <button class="secondary" onclick="sendSubscribeSur()">Solo sur</button>
+    </div>
+    <div class="row">
+      <textarea id="msg-input">{"action":"subscribe","zonas":["norte","sur","centro","periferico"]}</textarea>
+    </div>
+    <div class="row">
+      <button onclick="sendMsg()">Enviar</button>
+      <button class="secondary" onclick="clearLog()">Limpiar log</button>
+    </div>
+  </section>
+
+  <div id="log"></div>
+
+  <script>
+    let ws = null
+
+    function log(text, cls = "sys") {
+      const el = document.getElementById("log")
+      const d = document.createElement("div")
+      d.className = `msg ${cls}`
+      d.innerHTML = `<span class="ts">${new Date().toLocaleTimeString()}</span>${text}`
+      el.prepend(d)
+    }
+
+    function setStatus(text, cls = "") {
+      const el = document.getElementById("status")
+      el.textContent = `● ${text}`
+      el.className = cls
+    }
+
+    async function login() {
+      const base = document.getElementById("api-url").value
+      const username = document.getElementById("username").value
+      const password = document.getElementById("password").value
+      try {
+        const res = await fetch(`${base}/auth/login`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ username, password }),
+          credentials: "include",
+        })
+        const data = await res.json()
+        if (!res.ok) { log(`Login error: ${data.error}`, "err"); return }
+        if (data.requiere_2fa) {
+          document.getElementById("temp-token").value = data.temp_token
+          log(`2FA requerido — temp_token guardado. ${data.mensaje}`, "sys")
+          return
+        }
+        document.getElementById("access-token").value = data.access_token
+        log("Login OK — access_token guardado", "recv")
+      } catch (e) { log(`Login fetch error: ${e.message}`, "err") }
+    }
+
+    async function verify2FA() {
+      const base = document.getElementById("api-url").value
+      const codigo_otp = document.getElementById("otp").value
+      const temp_token = document.getElementById("temp-token").value
+      try {
+        const res = await fetch(`${base}/auth/2fa/verify`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ temp_token, codigo_otp }),
+          credentials: "include",
+        })
+        const data = await res.json()
+        if (!res.ok) { log(`2FA error: ${data.error}`, "err"); return }
+        document.getElementById("access-token").value = data.access_token
+        log("2FA OK — access_token guardado", "recv")
+      } catch (e) { log(`2FA fetch error: ${e.message}`, "err") }
+    }
+
+    function copyToken() {
+      const t = document.getElementById("access-token").value
+      navigator.clipboard.writeText(t)
+      log("Token copiado al portapapeles", "sys")
+    }
+
+    function connect() {
+      if (ws) ws.close()
+      const token = document.getElementById("access-token").value
+      let url = document.getElementById("ws-url").value
+      if (token) url += `?token=${encodeURIComponent(token)}`
+      log(`Conectando a ${url}`, "sys")
+      ws = new WebSocket(url)
+
+      ws.onopen = () => {
+        setStatus("Conectado", "connected")
+        log("Conexión establecida", "sys")
+      }
+      ws.onmessage = (e) => {
+        try {
+          const parsed = JSON.parse(e.data)
+          log(JSON.stringify(parsed, null, 2).replace(/\n/g, "<br>"), "recv")
+        } catch { log(e.data, "recv") }
+      }
+      ws.onclose = (e) => {
+        setStatus(`Desconectado (code: ${e.code})`)
+        ws = null
+        log(`Conexión cerrada — code=${e.code} reason=${e.reason || "(ninguna)"}`, e.code === 4001 ? "err" : "sys")
+      }
+      ws.onerror = () => {
+        setStatus("Error", "error")
+        log("Error de WebSocket", "err")
+      }
+    }
+
+    function disconnect() {
+      if (ws) { ws.close(1000, "manual disconnect"); ws = null }
+    }
+
+    function sendMsg() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) { log("No conectado", "err"); return }
+      const msg = document.getElementById("msg-input").value
+      ws.send(msg)
+      log(`→ ${msg}`, "sent")
+    }
+
+    function sendSubscribeAll() {
+      document.getElementById("msg-input").value =
+        '{"action":"subscribe","zonas":["norte","sur","centro","periferico"]}'
+      sendMsg()
+    }
+    function sendSubscribeNorte() {
+      document.getElementById("msg-input").value = '{"action":"subscribe","zonas":["norte"]}'
+      sendMsg()
+    }
+    function sendSubscribeSur() {
+      document.getElementById("msg-input").value = '{"action":"subscribe","zonas":["sur"]}'
+      sendMsg()
+    }
+
+    function clearLog() { document.getElementById("log").innerHTML = "" }
+  </script>
+</body>
+</html>

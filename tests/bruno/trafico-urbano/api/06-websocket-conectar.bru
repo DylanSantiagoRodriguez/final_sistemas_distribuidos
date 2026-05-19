@@ -1,0 +1,29 @@
+meta {
+  name: 06 - WebSocket Conectar y Suscribir
+  type: websocket
+  seq: 6
+}
+
+connect {
+  url: wss://ec2-18-225-226-38.us-east-2.compute.amazonaws.com/ws?token={{accessToken}}
+}
+
+docs {
+  Requiere Bruno >= 1.29 (soporte WebSocket).
+  El token va en el query param "token".
+
+  Flujo:
+  1. Ejecutar login + verify 2FA para obtener accessToken
+  2. Conectar — servidor valida JWT en el handshake HTTP Upgrade
+  3. Enviar mensaje de suscripción (ver body abajo)
+  4. Servidor responde: {"tipo":"subscripcion_ok","zonas":["norte","sur","centro","periferico"]}
+  5. Luego llegan eventos en tiempo real de las zonas suscritas
+
+  Si el token es inválido o expirado → conexión rechazada con HTTP 401.
+
+  Mensaje para suscribirse a todas las zonas:
+  {"action":"subscribe","zonas":["norte","sur","centro","periferico"]}
+
+  Mensaje para suscribirse solo a norte:
+  {"action":"subscribe","zonas":["norte"]}
+}

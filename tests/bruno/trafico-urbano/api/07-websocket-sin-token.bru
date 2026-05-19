@@ -1,0 +1,14 @@
+meta {
+  name: 07 - WebSocket Sin Token (401)
+  type: websocket
+  seq: 7
+}
+
+connect {
+  url: wss://ec2-18-225-226-38.us-east-2.compute.amazonaws.com/ws
+}
+
+docs {
+  Sin token en query param → servidor destruye el socket con HTTP 401.
+  La conexión debe fallar inmediatamente.
+}
