@@ -14,5 +14,3 @@ services:
       PGUSER: ${PGUSER:-postgres}
       PGPASSWORD: ${PGPASSWORD:-changeme}
       SQLI_DEMO: ${SQLI_DEMO:-false}
-    volumes:
-      - ./keys:/app/keys:ro

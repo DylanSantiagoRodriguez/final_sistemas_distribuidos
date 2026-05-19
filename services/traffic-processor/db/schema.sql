@@ -1,8 +1,6 @@
-CREATE DATABASE trafico_db;
+-- Runs inside trafico_db (set via POSTGRES_DB env var)
 
-\c trafico_db;
-
-CREATE TABLE eventos_trafico (
+CREATE TABLE IF NOT EXISTS eventos_trafico (
   id            SERIAL PRIMARY KEY,
   sensor_id     VARCHAR(50)  NOT NULL,
   zona          VARCHAR(20)  NOT NULL,
@@ -12,7 +10,7 @@ CREATE TABLE eventos_trafico (
   procesado_en  TIMESTAMPTZ  DEFAULT NOW()
 );
 
-CREATE TABLE anomalias (
+CREATE TABLE IF NOT EXISTS anomalias (
   id            SERIAL PRIMARY KEY,
   sensor_id     VARCHAR(50)  NOT NULL,
   zona          VARCHAR(20)  NOT NULL,
@@ -24,7 +22,7 @@ CREATE TABLE anomalias (
   datos_raw     JSONB
 );
 
-CREATE TABLE operadores (
+CREATE TABLE IF NOT EXISTS operadores (
   id                  SERIAL PRIMARY KEY,
   username            VARCHAR(50)  UNIQUE NOT NULL,
   password_hash       VARCHAR(255) NOT NULL,
@@ -38,15 +36,14 @@ CREATE TABLE operadores (
   creado_en           TIMESTAMPTZ  DEFAULT NOW()
 );
 
-CREATE INDEX idx_eventos_zona      ON eventos_trafico(zona);
-CREATE INDEX idx_eventos_timestamp ON eventos_trafico(timestamp);
-CREATE INDEX idx_anomalias_activo  ON anomalias(activo);
+CREATE INDEX IF NOT EXISTS idx_eventos_zona      ON eventos_trafico(zona);
+CREATE INDEX IF NOT EXISTS idx_eventos_timestamp ON eventos_trafico(timestamp);
+CREATE INDEX IF NOT EXISTS idx_anomalias_activo  ON anomalias(activo);
 
--- Operador de prueba: password = 'admin123'
--- bcrypt hash generado con saltRounds=10
+-- Default operator: admin / admin123
 INSERT INTO operadores (username, password_hash, zonas_asignadas)
 VALUES (
   'admin',
   '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
   ARRAY['norte','sur','centro','periferico']
-);
+) ON CONFLICT (username) DO NOTHING;
