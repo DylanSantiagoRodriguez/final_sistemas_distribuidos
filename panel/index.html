@@ -35,8 +35,8 @@
   </div>
 
   <div id="otp-section" class="card" style="display:none">
-    <label>Código OTP (Google Authenticator)</label>
-    <input type="text" id="otp" placeholder="123456" maxlength="6">
+    <label id="otp-label">Código enviado a tu email</label>
+    <input type="text" id="otp" placeholder="123456" maxlength="6" autocomplete="one-time-code">
     <button onclick="verify2FA()">Verificar</button>
     <div id="error-otp"></div>
   </div>
@@ -83,6 +83,7 @@
 
       if (data.requiere_2fa) {
         tempToken = data.temp_token
+        if (data.mensaje) document.getElementById("otp-label").textContent = data.mensaje
         document.getElementById("login-section").style.display = "none"
         document.getElementById("otp-section").style.display = "block"
         return
