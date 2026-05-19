@@ -1,7 +1,11 @@
 const { Resend } = require("resend")
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM || "onboarding@resend.dev"
+let resend = null
+function getResend() {
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY)
+  return resend
+}
 
 // operadorId -> { otp, exp }
 const store = new Map()
@@ -14,7 +18,7 @@ async function enviarOTP(operadorId, email) {
   const otp = generarCodigo()
   store.set(String(operadorId), { otp, exp: Date.now() + 5 * 60 * 1000 })
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: "Código de acceso — Panel de Tráfico Urbano",
