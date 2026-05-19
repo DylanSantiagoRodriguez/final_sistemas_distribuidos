@@ -1,0 +1,24 @@
+meta {
+  name: 01 - Histórico (todos los eventos)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/historico
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  test("respuesta es array", function() {
+    expect(res.body).to.be.an("array");
+  });
+}

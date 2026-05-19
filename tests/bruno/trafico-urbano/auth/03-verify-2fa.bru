@@ -1,0 +1,47 @@
+meta {
+  name: 03 - Verificar OTP (2FA)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/2fa/verify
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "temp_token": "{{tempToken}}",
+    "codigo_otp": "123456"
+  }
+}
+
+docs {
+  Pasos:
+  1. Ejecutar "01 - Login" — el sistema envía OTP al email dylan.rodriguez@campusucc.edu.co
+  2. Revisar inbox y copiar el código de 6 dígitos
+  3. Reemplazar "123456" con el código real en el body
+  4. Ejecutar este request
+
+  El temp_token se setea automáticamente desde el script del request 01.
+}
+
+script:post-response {
+  if (res.body.access_token) {
+    bru.setVar("accessToken", res.body.access_token);
+  }
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  test("access_token presente", function() {
+    expect(res.body.access_token).to.be.a("string");
+  });
+}

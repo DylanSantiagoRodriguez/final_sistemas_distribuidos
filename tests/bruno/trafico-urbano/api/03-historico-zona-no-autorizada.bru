@@ -1,0 +1,33 @@
+meta {
+  name: 03 - Histórico Zona No Autorizada (403)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/historico?zona=zona_inexistente
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:query {
+  zona: zona_inexistente
+}
+
+docs {
+  El JWT contiene zonas_asignadas: [norte, sur, centro, periferico].
+  Cualquier zona fuera de ese array → 403 sin tocar la DB.
+}
+
+tests {
+  test("status 403", function() {
+    expect(res.status).to.equal(403);
+  });
+  test("error zona no autorizada", function() {
+    expect(res.body.error).to.include("autorizada");
+  });
+}

@@ -1,0 +1,39 @@
+meta {
+  name: 06 - Setup 2FA (habilitar email OTP)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/auth/2fa/setup
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "email": "dylan.rodriguez@campusucc.edu.co"
+  }
+}
+
+docs {
+  Requiere accessToken válido (ejecutar login primero).
+  Activa 2FA por email para el operador autenticado.
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  test("ok true", function() {
+    expect(res.body.ok).to.be.true;
+  });
+}

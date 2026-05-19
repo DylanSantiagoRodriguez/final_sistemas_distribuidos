@@ -1,0 +1,17 @@
+meta {
+  name: 07 - Request Sin Token (403)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/historico?zona=norte
+  body: none
+  auth: none
+}
+
+tests {
+  test("status 401 sin token", function() {
+    expect(res.status).to.equal(401);
+  });
+}

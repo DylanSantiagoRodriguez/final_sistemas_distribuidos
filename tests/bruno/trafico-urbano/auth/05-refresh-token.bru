@@ -1,0 +1,29 @@
+meta {
+  name: 05 - Refresh Token
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/refresh
+  body: none
+  auth: none
+}
+
+docs {
+  El refresh_token viaja en cookie httpOnly.
+  Bruno envía cookies automáticamente si "credentials: include".
+  Si el refresh_token no está en cookies, responde 401.
+}
+
+script:post-response {
+  if (res.body.access_token) {
+    bru.setVar("accessToken", res.body.access_token);
+  }
+}
+
+tests {
+  test("status 200 o 401 (sin cookie)", function() {
+    expect([200, 401]).to.include(res.status);
+  });
+}

@@ -1,0 +1,31 @@
+meta {
+  name: 04 - Verificar OTP Código Inválido
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/2fa/verify
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "temp_token": "{{tempToken}}",
+    "codigo_otp": "000000"
+  }
+}
+
+tests {
+  test("status 401", function() {
+    expect(res.status).to.equal(401);
+  });
+  test("error código inválido", function() {
+    expect(res.body.error).to.include("nválido");
+  });
+}

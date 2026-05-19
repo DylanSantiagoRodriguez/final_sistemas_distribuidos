@@ -1,0 +1,42 @@
+meta {
+  name: 01 - Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "username": "admin",
+    "password": "admin123"
+  }
+}
+
+script:post-response {
+  // Si hay 2FA: guarda temp_token y espera OTP
+  // Si no hay 2FA: guarda access_token directamente
+  if (res.body.temp_token) {
+    bru.setVar("tempToken", res.body.temp_token);
+  }
+  if (res.body.access_token) {
+    bru.setVar("accessToken", res.body.access_token);
+  }
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  test("requiere_2fa o access_token presente", function() {
+    expect(res.body.requiere_2fa === true || !!res.body.access_token).to.be.true;
+  });
+}

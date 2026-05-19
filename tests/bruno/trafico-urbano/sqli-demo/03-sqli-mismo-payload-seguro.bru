@@ -1,0 +1,40 @@
+meta {
+  name: 03 - Mismo Payload en Endpoint SEGURO (bloqueado)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/historico
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:query {
+  zona: norte' UNION SELECT username,password_hash,null,null,null,null FROM operadores--
+  fecha: 2024-01-01
+  tipo: camara
+}
+
+docs {
+  DEMO EDUCATIVA — Mismo payload que el request 02, pero contra el endpoint seguro.
+
+  Con SQLI_DEMO=false (default):
+  - Requiere JWT válido
+  - Zona se valida contra zonas_asignadas del token → "Zona no autorizada" 403
+  - Nunca llega a la DB
+
+  Con SQLI_DEMO=true pero autenticado:
+  - La zona inyectada no está en zonas_asignadas → 403
+  - Prepared statement igualmente bloquearía la inyección
+}
+
+tests {
+  test("status 403 zona no autorizada (payload inyectado no es zona válida)", function() {
+    expect(res.status).to.equal(403);
+  });
+}
