@@ -9,6 +9,32 @@ const { enviarOTP, verificarOTP } = require("../auth/emailOtp")
 
 const router = express.Router()
 
+router.post("/register", async (req, res) => {
+  const { username, email, password } = req.body || {}
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: "username, email y password son requeridos" })
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: "password debe tener al menos 6 caracteres" })
+  }
+  try {
+    const password_hash = bcrypt.hashSync(password, 10)
+    const result = await db.query(
+      `INSERT INTO operadores (username, password_hash, email, totp_habilitado, zonas_asignadas)
+       VALUES ($1, $2, $3, TRUE, ARRAY['norte','sur','centro','periferico'])
+       RETURNING id, username, email`,
+      [username, password_hash, email]
+    )
+    res.status(201).json({ ok: true, operador: result.rows[0] })
+  } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "El usuario ya existe" })
+    }
+    console.error("[auth] register error", err.message)
+    res.status(500).json({ error: "Error interno" })
+  }
+})
+
 router.post("/login", async (req, res) => {
   const { username, password } = req.body || {}
   try {
