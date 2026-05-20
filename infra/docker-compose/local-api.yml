@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: trafico_postgres_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-trafico_db}
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - local_pgdata:/var/lib/postgresql/data
+      - ../../services/traffic-processor/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres} -d ${PGDATABASE:-trafico_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api-backend:
+    build: ../../services/api-backend
+    container_name: trafico_api_backend_local
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${PGDATABASE:-trafico_db}
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-changeme}
+      KAFKA_ENABLED: "false"
+      LOCAL_TRAFFIC_ENABLED: ${LOCAL_TRAFFIC_ENABLED:-true}
+      LOCAL_TRAFFIC_INTERVAL_MS: ${LOCAL_TRAFFIC_INTERVAL_MS:-5000}
+      LOCAL_TRAFFIC_ACCIDENTS: ${LOCAL_TRAFFIC_ACCIDENTS:-false}
+      SQLI_DEMO: ${SQLI_DEMO:-false}
+      RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
+      RESEND_FROM: ${RESEND_FROM:-onboarding@resend.dev}
+      OTP_APP_NAME: ${OTP_APP_NAME:-Panel de Trafico Urbano}
+      OTP_TTL_MS: ${OTP_TTL_MS:-300000}
+    ports:
+      - "3000:3000"
+
+volumes:
+  local_pgdata:

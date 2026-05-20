@@ -9,15 +9,35 @@ const { enviarOTP, verificarOTP } = require("../auth/emailOtp")
 
 const router = express.Router()
 
+let authSchemaReady
+
+function ensureAuthSchema() {
+  if (!authSchemaReady) {
+    authSchemaReady = db.query("ALTER TABLE operadores ADD COLUMN IF NOT EXISTS email VARCHAR(255)")
+      .then(() => db.query("CREATE UNIQUE INDEX IF NOT EXISTS idx_operadores_email ON operadores(email) WHERE email IS NOT NULL"))
+      .catch(err => {
+        authSchemaReady = null
+        throw err
+      })
+  }
+  return authSchemaReady
+}
+
 router.post("/register", async (req, res) => {
-  const { username, email, password } = req.body || {}
+  const username = String(req.body?.username || "").trim()
+  const email = String(req.body?.email || "").trim().toLowerCase()
+  const password = String(req.body?.password || "")
   if (!username || !email || !password) {
     return res.status(400).json({ error: "username, email y password son requeridos" })
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "email invalido" })
   }
   if (password.length < 6) {
     return res.status(400).json({ error: "password debe tener al menos 6 caracteres" })
   }
   try {
+    await ensureAuthSchema()
     const password_hash = bcrypt.hashSync(password, 10)
     const result = await db.query(
       `INSERT INTO operadores (username, password_hash, email, totp_habilitado, zonas_asignadas)
@@ -28,7 +48,7 @@ router.post("/register", async (req, res) => {
     res.status(201).json({ ok: true, operador: result.rows[0] })
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(409).json({ error: "El usuario ya existe" })
+      return res.status(409).json({ error: "El usuario o email ya existe" })
     }
     console.error("[auth] register error", err.message)
     res.status(500).json({ error: "Error interno" })
@@ -47,12 +67,17 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ error: "Cuenta bloqueada. Contacte al administrador." })
     }
     if (operador.totp_habilitado && operador.email) {
-      await enviarOTP(operador.id, operador.email)
+      try {
+        await enviarOTP(operador.id, operador.email)
+      } catch (err) {
+        console.error("[auth] resend otp error", err.message)
+        return res.status(502).json({ error: `No se pudo enviar el codigo OTP: ${err.message}` })
+      }
       const tempToken = await tempTokens.crear(operador.id)
       return res.json({
         requiere_2fa: true,
         temp_token: tempToken,
-        mensaje: `Código enviado a ${operador.email}`
+        mensaje: `Codigo enviado a ${operador.email}`
       })
     }
     const { accessToken, refreshToken } = generarTokens(operador)
@@ -76,7 +101,7 @@ router.post("/2fa/verify", rateLimiterOTP, async (req, res) => {
       return res.status(401).json({ error: "Código inválido o expirado" })
     }
     await db.query("UPDATE operadores SET intentos_otp = 0 WHERE id = $1", [operador.id])
-    tempTokens.eliminar(temp_token)
+    await tempTokens.eliminar(temp_token)
     const { accessToken, refreshToken } = generarTokens(operador)
     res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" })
     res.json({ access_token: accessToken })
@@ -85,11 +110,11 @@ router.post("/2fa/verify", rateLimiterOTP, async (req, res) => {
   }
 })
 
-// Enable email 2FA for an operator
 router.post("/2fa/setup", autenticarJWT, async (req, res) => {
   const { email } = req.body || {}
   if (!email) return res.status(400).json({ error: "email requerido" })
   try {
+    await ensureAuthSchema()
     await db.query(
       "UPDATE operadores SET email = $1, totp_habilitado = TRUE WHERE id = $2",
       [email, req.operador.sub]

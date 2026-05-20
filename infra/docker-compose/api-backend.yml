@@ -16,3 +16,5 @@ services:
       SQLI_DEMO: ${SQLI_DEMO:-false}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM: ${RESEND_FROM:-onboarding@resend.dev}
+      OTP_APP_NAME: ${OTP_APP_NAME:-Panel de Trafico Urbano}
+      OTP_TTL_MS: ${OTP_TTL_MS:-300000}
