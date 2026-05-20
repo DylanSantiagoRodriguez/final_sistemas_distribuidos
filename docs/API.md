@@ -10,6 +10,55 @@
 
 ## Autenticación
 
+### `POST https://powmlk.abrdns.com/auth/register`
+
+Crea un nuevo operador. El 2FA por email queda **activado automáticamente** — al hacer login, el sistema enviará OTP al email registrado.
+
+**Request:**
+```json
+{
+  "username": "operador01",
+  "email": "operador01@ejemplo.com",
+  "password": "mi_password_seguro"
+}
+```
+
+| Campo | Requerido | Validación |
+|-------|-----------|-----------|
+| `username` | Sí | Único en DB |
+| `email` | Sí | Destino del OTP en cada login |
+| `password` | Sí | Mínimo 6 caracteres |
+
+**Response (201):**
+```json
+{
+  "ok": true,
+  "operador": {
+    "id": 2,
+    "username": "operador01",
+    "email": "operador01@ejemplo.com"
+  }
+}
+```
+
+**Response — username ya existe (409):**
+```json
+{
+  "error": "El usuario ya existe"
+}
+```
+
+**Response — campos faltantes o password corto (400):**
+```json
+{
+  "error": "username, email y password son requeridos"
+}
+```
+
+> Las `zonas_asignadas` por defecto son `["norte","sur","centro","periferico"]`. Modificable directo en DB por un administrador.
+
+---
+
 ### `POST https://powmlk.abrdns.com/auth/login`
 
 Login con usuario y contraseña. Si el operador tiene 2FA activado, el sistema envía un OTP al email y devuelve `requiere_2fa: true` en vez del token.

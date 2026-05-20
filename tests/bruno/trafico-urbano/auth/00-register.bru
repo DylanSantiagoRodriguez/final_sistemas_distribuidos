@@ -1,0 +1,38 @@
+meta {
+  name: 00 - Registro de Operador
+  type: http
+  seq: 0
+}
+
+post {
+  url: https://powmlk.abrdns.com/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "username": "operador01",
+    "email": "operador01@ejemplo.com",
+    "password": "mi_password_seguro"
+  }
+}
+
+docs {
+  Crea un nuevo operador con 2FA por email activado automáticamente.
+  Tras registrarse, el login siempre enviará OTP al email proporcionado.
+  Zonas asignadas por defecto: norte, sur, centro, periferico.
+
+  Error 409 si el username ya existe.
+  Error 400 si falta algún campo o password < 6 caracteres.
+}
+
+tests {
+  test("status 201 o 409 (ya existe)", function() {
+    expect([201, 409]).to.include(res.status);
+  });
+}
