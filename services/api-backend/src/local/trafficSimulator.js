@@ -10,7 +10,7 @@ const SIGNAL_PHASES = [
   },
   {
     name: "vertical-yellow",
-    durationMs: 1000,
+    durationMs: 4000,
     signals: { norte: "amarillo", sur: "amarillo", centro: "rojo", periferico: "rojo" }
   },
   {
@@ -20,7 +20,7 @@ const SIGNAL_PHASES = [
   },
   {
     name: "horizontal-yellow",
-    durationMs: 1000,
+    durationMs: 4000,
     signals: { norte: "rojo", sur: "rojo", centro: "amarillo", periferico: "amarillo" }
   }
 ]
@@ -121,7 +121,7 @@ function startLocalTrafficSimulator(pushEvento) {
   let signalTimer = null
   publishCurrentSignalPhase()
 
-  console.log(`[local-traffic] enabled traffic_interval=${trafficIntervalMs}ms yellow=1000ms phases=vertical|horizontal max_vehicles=38`)
+  console.log(`[local-traffic] enabled traffic_interval=${trafficIntervalMs}ms yellow=4000ms phases=vertical|horizontal max_vehicles=38`)
   return () => {
     clearInterval(trafficTimer)
     if (signalTimer) clearTimeout(signalTimer)
