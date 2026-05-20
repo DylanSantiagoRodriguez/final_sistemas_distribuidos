@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS operadores (
   cuenta_bloqueada    BOOLEAN      DEFAULT FALSE,
   intentos_otp        INTEGER      DEFAULT 0,
   ultimo_intento_otp  TIMESTAMPTZ,
+  otp_code            VARCHAR(6),
+  otp_exp             TIMESTAMPTZ,
+  temp_token          TEXT,
+  temp_token_exp      TIMESTAMPTZ,
   creado_en           TIMESTAMPTZ  DEFAULT NOW()
 );
 

@@ -48,9 +48,10 @@ router.post("/login", async (req, res) => {
     }
     if (operador.totp_habilitado && operador.email) {
       await enviarOTP(operador.id, operador.email)
+      const tempToken = await tempTokens.crear(operador.id)
       return res.json({
         requiere_2fa: true,
-        temp_token: tempTokens.crear(operador.id),
+        temp_token: tempToken,
         mensaje: `Código enviado a ${operador.email}`
       })
     }
@@ -67,7 +68,7 @@ router.post("/2fa/verify", rateLimiterOTP, async (req, res) => {
   const { temp_token, codigo_otp } = req.body || {}
   try {
     const operador = await tempTokens.validar(temp_token)
-    if (!verificarOTP(operador.id, codigo_otp)) {
+    if (!await verificarOTP(operador.id, codigo_otp)) {
       await db.query(
         "UPDATE operadores SET intentos_otp = intentos_otp + 1, ultimo_intento_otp = NOW() WHERE id = $1",
         [operador.id]

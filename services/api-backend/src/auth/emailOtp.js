@@ -1,4 +1,5 @@
 const { Resend } = require("resend")
+const db = require("../db/postgres")
 
 const FROM = process.env.RESEND_FROM || "onboarding@resend.dev"
 let resend = null
@@ -7,16 +8,17 @@ function getResend() {
   return resend
 }
 
-// operadorId -> { otp, exp }
-const store = new Map()
-
 function generarCodigo() {
   return String(Math.floor(100000 + Math.random() * 900000))
 }
 
 async function enviarOTP(operadorId, email) {
   const otp = generarCodigo()
-  store.set(String(operadorId), { otp, exp: Date.now() + 5 * 60 * 1000 })
+  const exp = new Date(Date.now() + 5 * 60 * 1000)
+  await db.query(
+    "UPDATE operadores SET otp_code = $1, otp_exp = $2 WHERE id = $3",
+    [otp, exp, operadorId]
+  )
 
   await getResend().emails.send({
     from: FROM,
@@ -35,11 +37,18 @@ async function enviarOTP(operadorId, email) {
   })
 }
 
-function verificarOTP(operadorId, codigo) {
-  const entry = store.get(String(operadorId))
-  if (!entry || entry.exp < Date.now()) return false
-  if (entry.otp !== String(codigo)) return false
-  store.delete(String(operadorId))
+async function verificarOTP(operadorId, codigo) {
+  const result = await db.query(
+    "SELECT otp_code, otp_exp FROM operadores WHERE id = $1",
+    [operadorId]
+  )
+  const row = result.rows[0]
+  if (!row || !row.otp_code || new Date(row.otp_exp) < new Date()) return false
+  if (row.otp_code !== String(codigo)) return false
+  await db.query(
+    "UPDATE operadores SET otp_code = NULL, otp_exp = NULL WHERE id = $1",
+    [operadorId]
+  )
   return true
 }
 
