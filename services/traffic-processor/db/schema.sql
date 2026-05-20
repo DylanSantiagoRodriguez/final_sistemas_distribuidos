@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS anomalias (
 CREATE TABLE IF NOT EXISTS operadores (
   id                  SERIAL PRIMARY KEY,
   username            VARCHAR(50)  UNIQUE NOT NULL,
+  email               VARCHAR(255),
   password_hash       VARCHAR(255) NOT NULL,
   zonas_asignadas     TEXT[]       NOT NULL,
   totp_secret         VARCHAR(100),
@@ -39,6 +40,8 @@ CREATE TABLE IF NOT EXISTS operadores (
 CREATE INDEX IF NOT EXISTS idx_eventos_zona      ON eventos_trafico(zona);
 CREATE INDEX IF NOT EXISTS idx_eventos_timestamp ON eventos_trafico(timestamp);
 CREATE INDEX IF NOT EXISTS idx_anomalias_activo  ON anomalias(activo);
+ALTER TABLE operadores ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_operadores_email ON operadores(email) WHERE email IS NOT NULL;
 
 -- Default operator: admin / admin123
 INSERT INTO operadores (username, password_hash, zonas_asignadas)

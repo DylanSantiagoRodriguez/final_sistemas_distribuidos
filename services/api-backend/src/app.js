@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth")
 const { autenticarJWT } = require("./auth/middleware")
 const { createWSServer } = require("./websocket/server")
 const { startKafkaConsumer } = require("./kafka/consumer")
+const { startLocalTrafficSimulator } = require("./local/trafficSimulator")
 
 const SQLI_DEMO = process.env.SQLI_DEMO === "true"
 const historicoRoutes = SQLI_DEMO
@@ -26,9 +27,17 @@ app.get("/health", (_, res) => res.json({ ok: true, sqli_demo: SQLI_DEMO }))
 const server = http.createServer(app)
 const { pushEvento } = createWSServer(server)
 
-startKafkaConsumer(pushEvento).catch(err => {
-  console.error("[kafka] startup error:", err.message)
-})
+const kafkaEnabled = process.env.KAFKA_ENABLED !== "false"
+const localTrafficEnabled = process.env.LOCAL_TRAFFIC_ENABLED !== "false"
+
+if (kafkaEnabled) {
+  startKafkaConsumer(pushEvento).catch(err => {
+    console.error("[kafka] startup error:", err.message)
+  })
+} else {
+  console.log("[kafka] disabled")
+  if (localTrafficEnabled) startLocalTrafficSimulator(pushEvento)
+}
 
 const PORT = Number(process.env.PORT) || 3000
 server.listen(PORT, () =>
